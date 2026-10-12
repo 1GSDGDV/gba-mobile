@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0a12">
+<title>GBA 手机模拟器</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { height:100%; overflow:hidden; overscroll-behavior:none; }
+  body {
+    font-family: -apple-system,"Microsoft YaHei","PingFang SC",sans-serif;
+    background:#0a0a12; color:#e8e8f0; user-select:none; -webkit-user-select:none;
+    touch-action:manipulation;
+  }
+
+  /* ===== 落地页 ===== */
+  #landing {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    min-height:100vh; padding:24px 20px; gap:12px;
+    background:radial-gradient(ellipse at center,#1a1a2e 0%,#0a0a12 70%);
+  }
+  #landing h1 {
+    font-size:1.7rem; margin-bottom:4px;
+    background:linear-gradient(90deg,#ff5349,#ff9b3d);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  #landing .sub { color:#8a8aa0; font-size:0.82rem; margin-bottom:20px; }
+  #dropzone {
+    width:100%; max-width:340px; border:2px dashed #3a3a55; border-radius:14px;
+    padding:30px 16px; text-align:center; background:#15152a;
+  }
+  #dropzone p { color:#9a9ab0; margin-bottom:12px; font-size:0.82rem; }
+  .btn { display:inline-block; border:none; border-radius:10px; cursor:pointer; font-family:inherit; }
+  .btn:active { opacity:0.7; }
+  .btn-primary { background:linear-gradient(90deg,#ff5349,#ff7a39); color:#fff; padding:14px 32px; font-size:0.95rem; }
+  #load-default { margin-top:12px; font-size:1rem; padding:15px 36px; width:100%; max-width:340px; }
+  .hint { margin-top:16px; color:#6a6a80; font-size:0.74rem; max-width:320px; text-align:center; line-height:1.6; }
+  .hint code { background:#1f1f38; padding:2px 5px; border-radius:4px; color:#ff9b3d; font-size:0.85em; }
+
+  /* ===== 游戏页 ===== */
+  #game-screen { display:none; flex-direction:column; height:100vh; height:100dvh; }
+
+  /* 顶栏 */
+  #top-bar {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:5px 10px; padding-top:calc(5px + env(safe-area-inset-top,0));
+    background:rgba(10,10,18,0.95); backdrop-filter:blur(10px);
+    border-bottom:1px solid #1a1a2e; flex-shrink:0; gap:8px;
+  }
+  #top-bar .title { font-size:0.8rem; font-weight:600; color:#ff7a5a; white-space:nowrap; }
+  .top-btns { display:flex; gap:6px; align-items:center; }
+  .icon-btn {
+    background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:8px;
+    width:34px; height:34px; display:flex; align-items:center; justify-content:center;
+    color:#b0b0c0; font-size:0.9rem; cursor:pointer; flex-shrink:0;
+  }
+  .icon-btn:active { background:rgba(255,255,255,0.12); }
+  .speed-pill {
+    display:flex; align-items:center; background:rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:0 2px; height:30px;
+  }
+  .speed-pill select {
+    background:transparent; border:none; color:#ff9b3d; font-size:0.78rem;
+    font-family:inherit; padding:0 8px; appearance:none; -webkit-appearance:none; cursor:pointer; outline:none;
+  }
+
+  /* 模拟器画面 */
+  #emulator-wrap {
+    flex:1; display:flex; align-items:center; justify-content:center;
+    background:#000; position:relative; min-height:0; overflow:hidden;
+  }
+  #game { width:100%; height:100%; }
+  #game > div { width:100% !important; height:100% !important; }
+
+  /* 隐藏 EmulatorJS 内置手柄 */
+  #game .ejs_widgets, #game [class*="virtual"], #game [class*="gamepad"],
+  #game [class*="touch_overlay"], #game [class*="dpad"], #game [class*="face_button"],
+  #game .ejs_menu_bar, #game .ejs_control_bar { display:none !important; }
+
+  /* ===== 触控按钮区（参考 My Boy! / Pizza Boy 布局） ===== */
+  #controls {
+    flex-shrink:0;
+    background:linear-gradient(180deg,#0a0a12 0%,#101020 100%);
+    border-top:1px solid #1a1a2e;
+    padding:10px 14px;
+    padding-bottom:calc(8px + env(safe-area-inset-bottom,0));
+    display:flex; align-items:center; justify-content:space-between;
+    gap:12px;
+  }
+
+  /* 左侧区域：L键 + D-Pad + Select/Start */
+  .left-zone {
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+  }
+  .shoulder-btn {
+    width:52px; height:28px; border-radius:6px;
+    background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);
+    display:flex; align-items:center; justify-content:center;
+    font-size:0.75rem; font-weight:600; color:#c0c0d0; cursor:pointer;
+    touch-action:none;
+  }
+  .shoulder-btn.pressed { background:rgba(255,83,73,0.4); border-color:#ff5349; }
+
+  /* D-Pad：经典十字键 */
+  .dpad {
+    position:relative; width:130px; height:130px;
+  }
+  .dpad-btn {
+    position:absolute; background:rgba(255,255,255,0.07);
+    border:1px solid rgba(255,255,255,0.12);
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.1rem; color:#c0c0d0; cursor:pointer;
+    touch-action:none;
+  }
+  .dpad-btn.pressed { background:rgba(255,83,73,0.35); border-color:#ff5349; }
+  .dpad .up    { top:0; left:50%; transform:translateX(-50%); width:42px; height:48px; border-radius:10px 10px 0 0; }
+  .dpad .down  { bottom:0; left:50%; transform:translateX(-50%); width:42px; height:48px; border-radius:0 0 10px 10px; }
+  .dpad .left  { left:0; top:50%; transform:translateY(-50%); width:48px; height:42px; border-radius:10px 0 0 10px; }
+  .dpad .right { right:0; top:50%; transform:translateY(-50%); width:48px; height:42px; border-radius:0 10px 10px 0; }
+  .dpad .center {
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    width:42px; height:42px; background:rgba(255,255,255,0.04);
+    border:1px solid rgba(255,255,255,0.08); border-radius:50%;
+  }
+
+  .ss-group {
+    display:flex; gap:10px;
+  }
+  .ss-btn {
+    width:54px; height:24px; border-radius:12px;
+    background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);
+    display:flex; align-items:center; justify-content:center;
+    font-size:0.62rem; color:#a0a0b0; cursor:pointer; touch-action:none;
+  }
+  .ss-btn.pressed { background:rgba(255,83,73,0.35); border-color:#ff5349; }
+
+  /* 右侧区域：R键 + A/B按钮 */
+  .right-zone {
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+  }
+  .ab-group {
+    position:relative; width:110px; height:110px;
+  }
+  .ab-btn {
+    position:absolute; border-radius:50%;
+    background:rgba(255,255,255,0.08); border:2px solid rgba(255,255,255,0.2);
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.4rem; font-weight:700; color:#e0e0f0; cursor:pointer;
+    touch-action:none;
+    width:52px; height:52px;
+  }
+  .ab-btn.pressed { background:rgba(255,83,73,0.4); border-color:#ff5349; transform:scale(0.94); }
+  .ab-btn.a { top:0; right:0; }
+  .ab-btn.b { bottom:0; left:0; }
+
+  /* 底部导航 */
+  #bottom-nav {
+    display:flex; background:rgba(10,10,18,0.95); backdrop-filter:blur(10px);
+    border-top:1px solid #1a1a2e; flex-shrink:0;
+  }
+  .nav-btn {
+    flex:1; background:transparent; border:none; color:#6a6a80; font-size:0.68rem;
+    font-family:inherit; padding:7px 4px 6px;
+    display:flex; flex-direction:column; align-items:center; gap:2px; cursor:pointer;
+    position:relative;
+  }
+  .nav-btn .nav-icon { font-size:1.15rem; }
+  .nav-btn.active { color:#ff7a5a; }
+  .nav-btn.active::before {
+    content:''; position:absolute; top:0; left:30%; right:30%; height:2px;
+    background:#ff5349; border-radius:1px;
+  }
+
+  /* 底部抽屉 */
+  #sheet-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:300; }
+  #sheet-overlay.show { display:block; }
+  #bottom-sheet {
+    position:fixed; bottom:0; left:0; right:0; max-height:65vh;
+    background:#12121f; border-top:2px solid #2a2a44; border-radius:16px 16px 0 0;
+    z-index:301; display:flex; flex-direction:column;
+    transform:translateY(100%); transition:transform 0.3s ease-out;
+    padding-bottom:env(safe-area-inset-bottom,0);
+  }
+  #bottom-sheet.show { transform:translateY(0); }
+  .sheet-handle { width:40px; height:4px; background:#3a3a55; border-radius:2px; margin:10px auto 4px; flex-shrink:0; }
+  .sheet-header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:4px 16px 10px; border-bottom:1px solid #1f1f38; flex-shrink:0;
+  }
+  .sheet-header h3 { font-size:0.92rem; }
+  .sheet-close {
+    background:#2a2a44; border:none; border-radius:6px; color:#b0b0c0;
+    width:30px; height:30px; font-size:1rem; cursor:pointer;
+  }
+  .sheet-body { flex:1; overflow-y:auto; padding:10px 12px; -webkit-overflow-scrolling:touch; }
+  .sheet-desc { font-size:0.7rem; color:#6a6a80; margin-bottom:10px; line-height:1.5; }
+
+  /* 存档卡片 */
+  .slot-card { background:#1a1a2e; border:1px solid #2a2a44; border-radius:8px; padding:8px; margin-bottom:6px; }
+  .slot-card.has-data { border-color:#3d6b3d; }
+  .slot-top { display:flex; align-items:center; gap:6px; margin-bottom:4px; }
+  .slot-num {
+    background:#2a2a44; color:#ff9b3d; font-weight:700;
+    width:22px; height:22px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; font-size:0.72rem; flex-shrink:0;
+  }
+  .slot-card.has-data .slot-num { background:#2d5a2d; color:#6bd66b; }
+  .slot-card input[type="text"] {
+    flex:1; background:#0f0f1a; border:1px solid #2a2a44; border-radius:4px;
+    padding:5px 6px; color:#e8e8f0; font-size:0.78rem; font-family:inherit; min-width:0;
+  }
+  .slot-card input[type="text"]:focus { outline:none; border-color:#ff5349; }
+  .slot-meta { font-size:0.66rem; color:#6a6a80; margin-bottom:6px; padding-left:28px; }
+  .slot-actions { display:flex; gap:4px; padding-left:28px; }
+  .slot-actions .btn { padding:7px 0; font-size:0.74rem; flex:1; border:none; border-radius:5px; }
+  .btn-save { background:#2d5a2d; color:#c0f0c0; }
+  .btn-load { background:#2a4a6a; color:#c0d8f0; }
+  .btn-del { background:#5a2d2d; color:#f0c0c0; flex:0 0 40px; }
+  .btn:disabled { opacity:0.3; }
+
+  /* 金手指 */
+  .cheat-item {
+    display:flex; align-items:flex-start; gap:6px; padding:8px;
+    background:#1a1a2e; border:1px solid #2a2a44; border-radius:6px; margin-bottom:5px;
+  }
+  .cheat-item input[type="checkbox"] { margin-top:2px; width:18px; height:18px; flex-shrink:0; accent-color:#ff5349; }
+  .cheat-info { flex:1; min-width:0; }
+  .cheat-name { font-size:0.8rem; color:#e0e0f0; margin-bottom:1px; }
+  .cheat-desc { font-size:0.68rem; color:#6a6a80; }
+  .cheat-code { font-size:0.62rem; color:#4a4a60; font-family:monospace; margin-top:2px; word-break:break-all; }
+  .cheat-del { background:transparent; border:none; color:#5a5a70; font-size:0.9rem; padding:2px 6px; flex-shrink:0; }
+  .cheat-add-area { padding:8px 0; border-top:1px solid #1f1f38; margin-top:6px; }
+  .cheat-add-area input {
+    width:100%; background:#0f0f1a; border:1px solid #2a2a44; border-radius:5px;
+    padding:7px; color:#e8e8f0; font-size:0.78rem; font-family:inherit; margin-bottom:5px;
+  }
+  .cheat-add-area input:focus { outline:none; border-color:#ff5349; }
+  .btn-add-cheat { width:100%; padding:9px; font-size:0.8rem; background:#2a4a6a; color:#c0d8f0; border:none; border-radius:7px; }
+  .btn-apply-cheats {
+    width:100%; padding:13px; font-size:0.88rem; margin-top:6px;
+    background:linear-gradient(90deg,#ff5349,#ff7a39); color:#fff; border:none; border-radius:8px;
+  }
+  .cheat-hint { font-size:0.64rem; color:#6a6a80; margin-top:5px; line-height:1.4; }
+
+  /* Toast */
+  #toast {
+    position:fixed; bottom:150px; left:50%; transform:translateX(-50%);
+    background:#1f1f38; border:1px solid #3a3a55; color:#e8e8f0;
+    padding:8px 16px; border-radius:8px; font-size:0.78rem; z-index:9999;
+    opacity:0; transition:opacity 0.3s; pointer-events:none; max-width:90vw; text-align:center;
+  }
+  #toast.show { opacity:1; }
+
+  .loading-overlay {
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    background:rgba(8,8,15,0.9); z-index:100; color:#ff9b3d; font-size:0.9rem;
+  }
+</style>
+</head>
+<body>
+
+<!-- 落地页 -->
+<div id="landing">
+  <h1>GBA 手机模拟器</h1>
+  <p class="sub">参考 My Boy! / Pizza Boy 触控布局</p>
+  <div id="dropzone">
+    <p>点击选择 .gba 文件</p>
+    <button class="btn btn-primary" id="select-rom">选择 ROM</button>
+    <input type="file" id="rom-input" accept=".gba,.rom" hidden>
+  </div>
+  <button class="btn btn-primary" id="load-default">加载默认游戏</button>
+  <p class="hint">
+    手机无法直接读取本地文件。请在电脑运行：<br>
+    <code>python -m http.server 8080</code><br>
+    手机访问 <code>http://电脑IP:8080/gba.html</code>
+  </p>
+</div>
+
+<!-- 游戏页 -->
+<div id="game-screen">
+  <div id="top-bar">
+    <span class="title">GBA</span>
+    <div class="top-btns">
+      <div class="speed-pill">
+        <select id="speed-select">
+          <option value="1">1x</option>
+          <option value="2">2x</option>
+          <option value="3">3x</option>
+          <option value="5">5x</option>
+          <option value="0">Max</option>
+        </select>
+      </div>
+      <button class="icon-btn" id="btn-fullscreen">⛶</button>
+      <button class="icon-btn" id="btn-back">←</button>
+    </div>
+  </div>
+
+  <div id="emulator-wrap"><div id="game"></div></div>
+
+  <!-- 触控按钮区 -->
+  <div id="controls">
+    <!-- 左侧 -->
+    <div class="left-zone">
+      <div class="shoulder-btn" data-key="l">L</div>
+      <div class="dpad">
+        <div class="dpad-btn up" data-key="up">▲</div>
+        <div class="dpad-btn down" data-key="down">▼</div>
+        <div class="dpad-btn left" data-key="left">◀</div>
+        <div class="dpad-btn right" data-key="right">▶</div>
+        <div class="center"></div>
+      </div>
+      <div class="ss-group">
+        <div class="ss-btn" data-key="select">SELECT</div>
+        <div class="ss-btn" data-key="start">START</div>
+      </div>
+    </div>
+    <!-- 右侧 -->
+    <div class="right-zone">
+      <div class="shoulder-btn" data-key="r">R</div>
+      <div class="ab-group">
+        <div class="ab-btn a" data-key="a">A</div>
+        <div class="ab-btn b" data-key="b">B</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="bottom-nav">
+    <button class="nav-btn active" data-sheet="none"><span class="nav-icon">🎮</span><span>游戏</span></button>
+    <button class="nav-btn" data-sheet="saves"><span class="nav-icon">💾</span><span>存档</span></button>
+    <button class="nav-btn" data-sheet="cheats"><span class="nav-icon">⚡</span><span>金手指</span></button>
+  </div>
+</div>
+
+<!-- 底部抽屉 -->
+<div id="sheet-overlay"></div>
+<div id="bottom-sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <h3 id="sheet-title">存档</h3>
+    <button class="sheet-close" id="sheet-close">✕</button>
+  </div>
+  <div class="sheet-body" id="sheet-body"></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const ROM_FILENAME = "宝可梦火红_口袋群星SP汉化AYA更新2026_v0.32.gba";
+const NUM_SLOTS = 10;
+
+const KEY_MAP = {
+  b: 0, select: 2, start: 3, up: 4, down: 5, left: 6, right: 7,
+  a: 8, l: 10, r: 11
+};
+
+const PRESET_CHEATS = [
+  { name:"无限金钱", desc:"金钱变999999", code:"29C78059 96547894" },
+  { name:"大师球(背包第一格)", desc:"x999", code:"82025840 0001\n82025842 03E7" },
+  { name:"稀有糖果(背包第一格)", desc:"x999", code:"82025840 0063\n82025842 03E7" },
+  { name:"超力球(背包第一格)", desc:"x999", code:"82025840 0005\n82025842 03E7" },
+  { name:"无限PP", desc:"PP锁定全满", code:"820255EE 0020\n820255F0 0020" },
+  { name:"野生等级100", desc:"遇敌100级", code:"82023D50 0064" },
+  { name:"穿墙术", desc:"穿过障碍", code:"509197D3 542975F4\n78DA95DF 230022D2" },
+  { name:"无限经验", desc:"快速升级", code:"7403E8C2 9D6716A4\n1C6B3F86 8A8D33C8" },
+  { name:"闪光精灵", desc:"野生闪光", code:"39CE81B2 A95A173E\n66541148 95B35842" },
+];
+
+function showToast(msg, dur=2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._t); t._t = setTimeout(()=>t.classList.remove('show'), dur);
+}
+function formatSize(b) { return b<1024?b+' B':b<1048576?(b/1024).toFixed(1)+' KB':(b/1048576).toFixed(2)+' MB'; }
+function formatTime(ts) {
+  if(!ts) return '空'; const d=new Date(ts), p=n=>String(n).padStart(2,'0');
+  return `${d.getMonth()+1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function escapeHtml(s) { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+const DB_NAME='gba-pro', DB_STORE='slots';
+let _db=null;
+function openDB() {
+  return new Promise((res,rej) => {
+    const r=indexedDB.open(DB_NAME,1);
+    r.onupgradeneeded=e => { if(!e.target.result.objectStoreNames.contains(DB_STORE)) e.target.result.createObjectStore({keyPath:'slot'}); };
+    r.onsuccess=e=>{_db=e.target.result;res(_db);}; r.onerror=e=>rej(e.target.error);
+  });
+}
+function idbGet(slot) { return new Promise((res,rej)=>{const tx=_db.transaction(DB_STORE,'readonly');const rq=tx.objectStore(DB_STORE).get(slot);rq.onsuccess=()=>res(rq.result||null);rq.onerror=()=>rej(rq.error);}); }
+function idbPut(rec) { return new Promise((res,rej)=>{const tx=_db.transaction(DB_STORE,'readwrite');tx.objectStore(DB_STORE).put(rec);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);}); }
+function idbDelete(slot) { return new Promise((res,rej)=>{const tx=_db.transaction(DB_STORE,'readwrite');tx.objectStore(DB_STORE).delete(slot);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);}); }
+function idbGetAll() { return new Promise((res,rej)=>{const tx=_db.transaction(DB_STORE,'readonly');const rq=tx.objectStore(DB_STORE).getAll();rq.onsuccess=()=>res(rq.result||[]);rq.onerror=()=>rej(rq.error);}); }
+
+let emulatorReady = false;
+function startEmulator(romUrl) {
+  window.EJS_player = '#game';
+  window.EJS_core = 'gba';
+  window.EJS_gameUrl = romUrl;
+  window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
+  window.EJS_startOnLoaded = true;
+  window.EJS_gameName = 'PokemonFireRed_v032';
+  window.EJS_gameID = 1632;
+  window.EJS_language = 'zh-CN';
+  window.EJS_color = '#FF5349';
+  window.EJS_backgroundColor = '#000000';
+  window.EJS_Buttons = { playPause:false,restart:false,saveState:false,loadState:false,saveSavFiles:false,loadSavFiles:false,quickSave:false,quickLoad:false,slowMotion:false,fastForward:false,screenRecord:false,gamepad:false,cheatCode:false,cacheManager:false,settings:false,fullscreen:false,screenshot:false };
+  const s = document.createElement('script');
+  s.src = 'https://cdn.emulatorjs.org/stable/data/loader.js';
+  s.onerror = () => showToast('模拟器加载失败，请检查网络', 5000);
+  document.body.appendChild(s);
+}
+function waitForEmulator() {
+  return new Promise(res => {
+    const c = setInterval(() => {
+      if (window.EJS_emulator && window.EJS_emulator.gameManager) { clearInterval(c); emulatorReady = true; res(); }
+    }, 300);
+  });
+}
+
+function setupTouchControls() {
+  document.querySelectorAll('[data-key]').forEach(el => {
+    const key = el.dataset.key;
+    const btnIndex = KEY_MAP[key];
+    if (btnIndex === undefined) return;
+    let pressed = false;
+
+    const onPress = (e) => {
+      e.preventDefault();
+      if (pressed) return;
+      pressed = true;
+      el.classList.add('pressed');
+      if (emulatorReady) {
+        try { window.EJS_emulator.gameManager.functions.simulateInput(0, btnIndex, 1); } catch(e) {}
+      }
+    };
+    const onRelease = (e) => {
+      e.preventDefault();
+      if (!pressed) return;
+      pressed = false;
+      el.classList.remove('pressed');
+      if (emulatorReady) {
+        try { window.EJS_emulator.gameManager.functions.simulateInput(0, btnIndex, 0); } catch(e) {}
+      }
+    };
+
+    el.addEventListener('touchstart', onPress, { passive: false });
+    el.addEventListener('touchend', onRelease, { passive: false });
+    el.addEventListener('touchcancel', onRelease, { passive: false });
+    el.addEventListener('mousedown', onPress);
+    el.addEventListener('mouseup', onRelease);
+    el.addEventListener('mouseleave', onRelease);
+  });
+}
+
+async function captureState() {
+  const gm = window.EJS_emulator?.gameManager;
+  if (!gm) throw new Error('模拟器未就绪');
+  if (typeof gm.getState === 'function') {
+    try { const r = await Promise.resolve(gm.getState()); if (r && r.byteLength) return new Uint8Array(r); } catch(e) {}
+  }
+  throw new Error('无法获取存档');
+}
+async function restoreState(data) {
+  const gm = window.EJS_emulator?.gameManager;
+  if (!gm) throw new Error('模拟器未就绪');
+  const st = data instanceof Uint8Array ? data : new Uint8Array(data);
+  if (typeof gm.loadState === 'function') { await Promise.resolve(gm.loadState(st)); return; }
+  throw new Error('无法加载存档');
+}
+
+let slotMeta = {};
+async function loadAllSlotMeta() {
+  const all = await idbGetAll(); slotMeta = {};
+  for (const r of all) slotMeta[r.slot] = { name:r.name, timestamp:r.timestamp, size:r.size };
+}
+function renderSlotsBody() {
+  const body = document.getElementById('sheet-body');
+  body.innerHTML = `<p class="sheet-desc">${NUM_SLOTS} 个存档槽，数据存浏览器本地。</p>`;
+  for (let i = 1; i <= NUM_SLOTS; i++) {
+    const m = slotMeta[i], has = !!m;
+    const c = document.createElement('div');
+    c.className = 'slot-card' + (has?' has-data':'');
+    c.innerHTML = `
+      <div class="slot-top">
+        <div class="slot-num">${i}</div>
+        <input type="text" id="slot-name-${i}" placeholder="${has?'':'空'}" value="${has?escapeHtml(m.name||''):''}">
+      </div>
+      <div class="slot-meta">${formatTime(m&&m.timestamp)} ${m&&m.size?'· '+formatSize(m.size):''}</div>
+      <div class="slot-actions">
+        <button class="btn btn-save" data-action="save" data-slot="${i}">保存</button>
+        <button class="btn btn-load" data-action="load" data-slot="${i}" ${has?'':'disabled'}>读取</button>
+        <button class="btn btn-del" data-action="del" data-slot="${i}" ${has?'':'disabled'}>删</button>
+      </div>`;
+    body.appendChild(c);
+  }
+}
+async function saveToSlot(slot) {
+  const ne = document.getElementById('slot-name-'+slot);
+  const name = (ne && ne.value.trim()) || `存档${slot}`;
+  showToast('保存中...');
+  let st; try { st = await captureState(); } catch(e) { showToast('保存失败:'+e.message,4000); return; }
+  await idbPut({slot,name,timestamp:Date.now(),size:st.byteLength,state:st});
+  slotMeta[slot] = {name,timestamp:Date.now(),size:st.byteLength};
+  renderSlotsBody();
+  showToast(`已保存槽${slot}(${formatSize(st.byteLength)})`);
+}
+async function loadFromSlot(slot) {
+  const r = await idbGet(slot);
+  if (!r||!r.state) { showToast('槽'+slot+'为空'); return; }
+  showToast('读取中...');
+  try { await restoreState(r.state); showToast(`已读取槽${slot}`); } catch(e) { showToast('读取失败:'+e.message,4000); }
+}
+async function deleteSlot(slot) {
+  await idbDelete(slot); delete slotMeta[slot]; renderSlotsBody(); showToast('已删除槽'+slot);
+}
+
+let currentSpeed = 1;
+async function setSpeed(speed) {
+  if (speed === currentSpeed) return;
+  const gm = window.EJS_emulator?.gameManager;
+  if (!gm || !gm.functions) { showToast('模拟器未就绪'); return; }
+  try { gm.functions.setFastForwardRatio(speed===0?0:speed); } catch(e) {}
+  try { gm.functions.toggleFastForward(speed===1?0:1); } catch(e) {}
+  currentSpeed = speed;
+  showToast(speed===0?'最大加速':`${speed}x`);
+}
+
+let cheats = [];
+function initCheats() { cheats = PRESET_CHEATS.map((c,i)=>({id:'p'+i,...c,enabled:false,preset:true})); }
+function renderCheatsBody() {
+  const body = document.getElementById('sheet-body');
+  body.innerHTML = `<p class="sheet-desc">勾选后点应用，即时生效。</p>`;
+  for (const c of cheats) {
+    const item = document.createElement('div');
+    item.className = 'cheat-item';
+    item.innerHTML = `
+      <input type="checkbox" data-cid="${c.id}" ${c.enabled?'checked':''}>
+      <div class="cheat-info">
+        <div class="cheat-name">${escapeHtml(c.name)}</div>
+        <div class="cheat-desc">${escapeHtml(c.desc||'')}</div>
+        <div class="cheat-code">${escapeHtml(c.code.replace(/\n/g,' | '))}</div>
+      </div>
+      ${c.preset?'':`<button class="cheat-del" data-cdel="${c.id}">✕</button>`}`;
+    body.appendChild(item);
+  }
+  const aa = document.createElement('div');
+  aa.className = 'cheat-add-area';
+  aa.innerHTML = `<input type="text" id="nc-name" placeholder="名称"><input type="text" id="nc-code" placeholder="代码">`;
+  body.appendChild(aa);
+  const ab = document.createElement('button'); ab.className='btn btn-add-cheat'; ab.textContent='添加'; ab.id='btn-add-cheat';
+  body.appendChild(ab);
+  const ap = document.createElement('button'); ap.className='btn-apply-cheats'; ap.textContent='应用选中金手指'; ap.id='btn-apply-cheats';
+  body.appendChild(ap);
+  const h = document.createElement('p'); h.className='cheat-hint'; h.textContent='注：代码与ROM版本相关，汉化版可能部分无效。';
+  body.appendChild(h);
+}
+function addCustomCheat() {
+  const n = document.getElementById('nc-name').value.trim();
+  const c = document.getElementById('nc-code').value.trim();
+  if (!n||!c) { showToast('请填名称和代码'); return; }
+  cheats.push({id:'c'+Date.now(),name:n,desc:'自定义',code:c,enabled:false,preset:false});
+  renderCheatsBody(); showToast('已添加:'+n);
+}
+function formatCode(code) { return code.split('\n').map(l=>l.trim()).filter(l=>l).join('+'); }
+async function applyCheats() {
+  const gm = window.EJS_emulator?.gameManager;
+  if (!gm||!gm.functions) { showToast('模拟器未就绪'); return; }
+  const en = cheats.filter(c=>c.enabled);
+  const btn = document.getElementById('btn-apply-cheats');
+  btn.disabled = true; btn.textContent = '应用中...';
+  try {
+    gm.functions.resetCheat();
+    en.forEach((c,i) => gm.functions.setCheat(i, 1, formatCode(c.code)));
+    showToast(en.length>0?`已应用${en.length}个`:'已清除');
+  } catch(e) { showToast('失败:'+e.message,4000); }
+  btn.disabled = false; btn.textContent = '应用选中金手指';
+}
+
+function openSheet(type) {
+  const title = document.getElementById('sheet-title');
+  if (type === 'saves') { title.textContent = '存档管理'; renderSlotsBody(); }
+  else if (type === 'cheats') { title.textContent = '金手指'; renderCheatsBody(); }
+  document.getElementById('sheet-overlay').classList.add('show');
+  document.getElementById('bottom-sheet').classList.add('show');
+}
+function closeSheet() {
+  document.getElementById('sheet-overlay').classList.remove('show');
+  document.getElementById('bottom-sheet').classList.remove('show');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelector('.nav-btn[data-sheet="none"]').classList.add('active');
+}
+
+document.getElementById('select-rom').onclick = () => document.getElementById('rom-input').click();
+document.getElementById('rom-input').onchange = e => { if(e.target.files[0]) enterGame(URL.createObjectURL(e.target.files[0])); };
+const dz = document.getElementById('dropzone');
+dz.addEventListener('dragover', e=>{e.preventDefault();dz.classList.add('dragover');});
+dz.addEventListener('dragleave', ()=>dz.classList.remove('dragover'));
+dz.addEventListener('drop', e=>{e.preventDefault();dz.classList.remove('dragover');const f=e.dataTransfer.files[0];if(f&&/\.(gba|rom)$/i.test(f.name))enterGame(URL.createObjectURL(f));else showToast('请拖入.gba文件');});
+document.getElementById('load-default').onclick = () => enterGame(encodeURIComponent(ROM_FILENAME));
+document.getElementById('speed-select').onchange = e => setSpeed(parseInt(e.target.value,10));
+document.getElementById('btn-fullscreen').onclick = () => {
+  const el = document.documentElement;
+  if (document.fullscreenElement) document.exitFullscreen(); else el.requestFullscreen&&el.requestFullscreen();
+};
+document.getElementById('btn-back').onclick = () => { if(confirm('返回将卸载模拟器，未保存进度会丢失。确定？')) location.reload(); };
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.onclick = () => {
+    const s = btn.dataset.sheet;
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b===btn));
+    if (s==='none') closeSheet(); else openSheet(s);
+  };
+});
+document.getElementById('sheet-close').onclick = closeSheet;
+document.getElementById('sheet-overlay').onclick = closeSheet;
+document.getElementById('sheet-body').addEventListener('click', async (e) => {
+  const sb = e.target.closest('[data-action]');
+  if (sb) { if(sb.disabled)return; const a=sb.dataset.action, s=parseInt(sb.dataset.slot,10);
+    if(a==='save')await saveToSlot(s); else if(a==='load')await loadFromSlot(s); else if(a==='del')await deleteSlot(s); return; }
+  if (e.target.closest('#btn-add-cheat')) { addCustomCheat(); return; }
+  if (e.target.closest('#btn-apply-cheats')) { applyCheats(); return; }
+  const cd = e.target.closest('[data-cdel]'); if (cd) { cheats=cheats.filter(c=>c.id!==cd.dataset.cdel); renderCheatsBody(); return; }
+});
+document.getElementById('sheet-body').addEventListener('change', (e) => {
+  if (e.target.type==='checkbox' && e.target.dataset.cid) { const c=cheats.find(c=>c.id===e.target.dataset.cid); if(c)c.enabled=e.target.checked; }
+});
+
+async function enterGame(romUrl) {
+  document.getElementById('landing').style.display = 'none';
+  document.getElementById('game-screen').style.display = 'flex';
+  const overlay = document.createElement('div');
+  overlay.className = 'loading-overlay';
+  overlay.textContent = '正在加载模拟器...';
+  document.getElementById('emulator-wrap').appendChild(overlay);
+  try { await openDB(); } catch(e) { console.error(e); }
+  await loadAllSlotMeta();
+  initCheats();
+  setupTouchControls();
+  startEmulator(romUrl);
+  try {
+    await waitForEmulator();
+    overlay.remove();
+    showToast('就绪！触控按钮已启用', 3000);
+  } catch(e) { overlay.textContent = '加载失败：'+e.message; }
+}
+</script>
+</body>
+</html>
