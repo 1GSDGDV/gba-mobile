@@ -81,79 +81,90 @@
   #game [class*="touch_overlay"], #game [class*="dpad"], #game [class*="face_button"],
   #game .ejs_menu_bar, #game .ejs_control_bar { display:none !important; }
 
-  /* ===== 触控按钮区（参考 My Boy! / Pizza Boy 布局） ===== */
+  /* ===== 触控按钮区（完全参照 My Boy! 布局） ===== */
   #controls {
     flex-shrink:0;
     background:linear-gradient(180deg,#0a0a12 0%,#101020 100%);
     border-top:1px solid #1a1a2e;
-    padding:10px 14px;
-    padding-bottom:calc(8px + env(safe-area-inset-bottom,0));
-    display:flex; align-items:center; justify-content:space-between;
-    gap:12px;
+    padding:12px 10px;
+    padding-bottom:calc(10px + env(safe-area-inset-bottom,0));
+    display:flex; align-items:flex-end; justify-content:space-between;
+    gap:8px;
   }
 
-  /* 左侧区域：L键 + D-Pad + Select/Start */
+  /* 左侧区域：D-Pad 大十字键 + Select/Start */
   .left-zone {
-    display:flex; flex-direction:column; align-items:center; gap:8px;
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+    flex:1;
   }
-  .shoulder-btn {
-    width:52px; height:28px; border-radius:6px;
-    background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);
-    display:flex; align-items:center; justify-content:center;
-    font-size:0.75rem; font-weight:600; color:#c0c0d0; cursor:pointer;
-    touch-action:none;
-  }
-  .shoulder-btn.pressed { background:rgba(255,83,73,0.4); border-color:#ff5349; }
-
-  /* D-Pad：经典十字键 */
   .dpad {
-    position:relative; width:130px; height:130px;
+    position:relative; width:150px; height:150px;
   }
   .dpad-btn {
-    position:absolute; background:rgba(255,255,255,0.07);
-    border:1px solid rgba(255,255,255,0.12);
+    position:absolute; background:rgba(255,255,255,0.08);
+    border:1px solid rgba(255,255,255,0.15);
     display:flex; align-items:center; justify-content:center;
-    font-size:1.1rem; color:#c0c0d0; cursor:pointer;
+    font-size:1.2rem; color:#c0c0d0; cursor:pointer;
     touch-action:none;
+    backdrop-filter:blur(4px);
   }
-  .dpad-btn.pressed { background:rgba(255,83,73,0.35); border-color:#ff5349; }
-  .dpad .up    { top:0; left:50%; transform:translateX(-50%); width:42px; height:48px; border-radius:10px 10px 0 0; }
-  .dpad .down  { bottom:0; left:50%; transform:translateX(-50%); width:42px; height:48px; border-radius:0 0 10px 10px; }
-  .dpad .left  { left:0; top:50%; transform:translateY(-50%); width:48px; height:42px; border-radius:10px 0 0 10px; }
-  .dpad .right { right:0; top:50%; transform:translateY(-50%); width:48px; height:42px; border-radius:0 10px 10px 0; }
+  .dpad-btn.pressed { background:rgba(255,83,73,0.4); border-color:#ff5349; }
+  .dpad .up    { top:0; left:50%; transform:translateX(-50%); width:52px; height:58px; border-radius:12px 12px 0 0; }
+  .dpad .down  { bottom:0; left:50%; transform:translateX(-50%); width:52px; height:58px; border-radius:0 0 12px 12px; }
+  .dpad .left  { left:0; top:50%; transform:translateY(-50%); width:58px; height:52px; border-radius:12px 0 0 12px; }
+  .dpad .right { right:0; top:50%; transform:translateY(-50%); width:58px; height:52px; border-radius:0 12px 12px 0; }
   .dpad .center {
     position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
-    width:42px; height:42px; background:rgba(255,255,255,0.04);
-    border:1px solid rgba(255,255,255,0.08); border-radius:50%;
+    width:52px; height:52px; background:rgba(255,255,255,0.05);
+    border:1px solid rgba(255,255,255,0.1); border-radius:50%;
   }
 
   .ss-group {
-    display:flex; gap:10px;
+    display:flex; gap:12px; margin-top:2px;
   }
   .ss-btn {
-    width:54px; height:24px; border-radius:12px;
-    background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);
+    width:58px; height:26px; border-radius:13px;
+    background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.18);
     display:flex; align-items:center; justify-content:center;
-    font-size:0.62rem; color:#a0a0b0; cursor:pointer; touch-action:none;
+    font-size:0.65rem; font-weight:600; color:#a0a0b0; cursor:pointer; touch-action:none;
+    backdrop-filter:blur(4px);
   }
-  .ss-btn.pressed { background:rgba(255,83,73,0.35); border-color:#ff5349; }
+  .ss-btn.pressed { background:rgba(255,83,73,0.4); border-color:#ff5349; }
 
-  /* 右侧区域：R键 + A/B按钮 */
-  .right-zone {
+  /* 中间区域：L/R 肩键 */
+  .mid-zone {
     display:flex; flex-direction:column; align-items:center; gap:8px;
+    padding-bottom:20px;
+  }
+  .shoulder-btn {
+    width:56px; height:32px; border-radius:8px;
+    background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.18);
+    display:flex; align-items:center; justify-content:center;
+    font-size:0.8rem; font-weight:700; color:#c0c0d0; cursor:pointer;
+    touch-action:none;
+    backdrop-filter:blur(4px);
+  }
+  .shoulder-btn.pressed { background:rgba(255,83,73,0.45); border-color:#ff5349; }
+
+  /* 右侧区域：A/B 大圆形按钮 */
+  .right-zone {
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+    flex:1;
   }
   .ab-group {
-    position:relative; width:110px; height:110px;
+    position:relative; width:130px; height:130px;
   }
   .ab-btn {
     position:absolute; border-radius:50%;
-    background:rgba(255,255,255,0.08); border:2px solid rgba(255,255,255,0.2);
+    background:rgba(255,255,255,0.1); border:2px solid rgba(255,255,255,0.25);
     display:flex; align-items:center; justify-content:center;
-    font-size:1.4rem; font-weight:700; color:#e0e0f0; cursor:pointer;
+    font-size:1.5rem; font-weight:700; color:#e0e0f0; cursor:pointer;
     touch-action:none;
-    width:52px; height:52px;
+    width:64px; height:64px;
+    backdrop-filter:blur(4px);
+    box-shadow:0 2px 8px rgba(0,0,0,0.3);
   }
-  .ab-btn.pressed { background:rgba(255,83,73,0.4); border-color:#ff5349; transform:scale(0.94); }
+  .ab-btn.pressed { background:rgba(255,83,73,0.45); border-color:#ff5349; transform:scale(0.92); }
   .ab-btn.a { top:0; right:0; }
   .ab-btn.b { bottom:0; left:0; }
 
@@ -303,9 +314,8 @@
 
   <!-- 触控按钮区 -->
   <div id="controls">
-    <!-- 左侧 -->
+    <!-- 左侧：D-Pad + Select/Start -->
     <div class="left-zone">
-      <div class="shoulder-btn" data-key="l">L</div>
       <div class="dpad">
         <div class="dpad-btn up" data-key="up">▲</div>
         <div class="dpad-btn down" data-key="down">▼</div>
@@ -318,9 +328,13 @@
         <div class="ss-btn" data-key="start">START</div>
       </div>
     </div>
-    <!-- 右侧 -->
-    <div class="right-zone">
+    <!-- 中间：L/R 肩键 -->
+    <div class="mid-zone">
+      <div class="shoulder-btn" data-key="l">L</div>
       <div class="shoulder-btn" data-key="r">R</div>
+    </div>
+    <!-- 右侧：A/B 按钮 -->
+    <div class="right-zone">
       <div class="ab-group">
         <div class="ab-btn a" data-key="a">A</div>
         <div class="ab-btn b" data-key="b">B</div>
