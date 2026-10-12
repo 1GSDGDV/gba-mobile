@@ -81,90 +81,88 @@
   #game [class*="touch_overlay"], #game [class*="dpad"], #game [class*="face_button"],
   #game .ejs_menu_bar, #game .ejs_control_bar { display:none !important; }
 
-  /* ===== 触控按钮区（完全参照 My Boy! 布局） ===== */
+  /* ===== 触控按钮区（My Boy! 经典布局） ===== */
   #controls {
     flex-shrink:0;
     background:linear-gradient(180deg,#0a0a12 0%,#101020 100%);
     border-top:1px solid #1a1a2e;
-    padding:12px 10px;
-    padding-bottom:calc(10px + env(safe-area-inset-bottom,0));
+    padding:14px 16px;
+    padding-bottom:calc(12px + env(safe-area-inset-bottom,0));
     display:flex; align-items:flex-end; justify-content:space-between;
-    gap:8px;
+    gap:10px;
   }
 
-  /* 左侧区域：D-Pad 大十字键 + Select/Start */
+  /* 左侧：D-Pad 大十字键 */
   .left-zone {
-    display:flex; flex-direction:column; align-items:center; gap:6px;
-    flex:1;
+    display:flex; flex-direction:column; align-items:center; gap:8px;
   }
   .dpad {
-    position:relative; width:150px; height:150px;
+    position:relative; width:160px; height:160px;
   }
   .dpad-btn {
-    position:absolute; background:rgba(255,255,255,0.08);
-    border:1px solid rgba(255,255,255,0.15);
+    position:absolute; background:rgba(255,255,255,0.1);
+    border:1px solid rgba(255,255,255,0.18);
     display:flex; align-items:center; justify-content:center;
-    font-size:1.2rem; color:#c0c0d0; cursor:pointer;
+    font-size:1.3rem; color:#c0c0d0; cursor:pointer;
     touch-action:none;
     backdrop-filter:blur(4px);
   }
-  .dpad-btn.pressed { background:rgba(255,83,73,0.4); border-color:#ff5349; }
-  .dpad .up    { top:0; left:50%; transform:translateX(-50%); width:52px; height:58px; border-radius:12px 12px 0 0; }
-  .dpad .down  { bottom:0; left:50%; transform:translateX(-50%); width:52px; height:58px; border-radius:0 0 12px 12px; }
-  .dpad .left  { left:0; top:50%; transform:translateY(-50%); width:58px; height:52px; border-radius:12px 0 0 12px; }
-  .dpad .right { right:0; top:50%; transform:translateY(-50%); width:58px; height:52px; border-radius:0 12px 12px 0; }
+  .dpad-btn.pressed { background:rgba(255,83,73,0.45); border-color:#ff5349; }
+  .dpad .up    { top:0; left:50%; transform:translateX(-50%); width:56px; height:64px; border-radius:14px 14px 0 0; }
+  .dpad .down  { bottom:0; left:50%; transform:translateX(-50%); width:56px; height:64px; border-radius:0 0 14px 14px; }
+  .dpad .left  { left:0; top:50%; transform:translateY(-50%); width:64px; height:56px; border-radius:14px 0 0 14px; }
+  .dpad .right { right:0; top:50%; transform:translateY(-50%); width:64px; height:56px; border-radius:0 14px 14px 0; }
   .dpad .center {
     position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
-    width:52px; height:52px; background:rgba(255,255,255,0.05);
-    border:1px solid rgba(255,255,255,0.1); border-radius:50%;
+    width:56px; height:56px; background:rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.12); border-radius:50%;
   }
 
   .ss-group {
-    display:flex; gap:12px; margin-top:2px;
+    display:flex; gap:14px; margin-top:4px;
   }
   .ss-btn {
-    width:58px; height:26px; border-radius:13px;
-    background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.18);
+    width:62px; height:28px; border-radius:14px;
+    background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.2);
     display:flex; align-items:center; justify-content:center;
-    font-size:0.65rem; font-weight:600; color:#a0a0b0; cursor:pointer; touch-action:none;
+    font-size:0.68rem; font-weight:600; color:#a0a0b0; cursor:pointer; touch-action:none;
     backdrop-filter:blur(4px);
   }
-  .ss-btn.pressed { background:rgba(255,83,73,0.4); border-color:#ff5349; }
+  .ss-btn.pressed { background:rgba(255,83,73,0.45); border-color:#ff5349; }
 
-  /* 中间区域：L/R 肩键 */
+  /* 中间：L/R 肩键 */
   .mid-zone {
-    display:flex; flex-direction:column; align-items:center; gap:8px;
-    padding-bottom:20px;
+    display:flex; flex-direction:column; align-items:center; gap:10px;
+    padding-bottom:30px;
   }
   .shoulder-btn {
-    width:56px; height:32px; border-radius:8px;
-    background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.18);
+    width:60px; height:36px; border-radius:10px;
+    background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.2);
     display:flex; align-items:center; justify-content:center;
-    font-size:0.8rem; font-weight:700; color:#c0c0d0; cursor:pointer;
+    font-size:0.85rem; font-weight:700; color:#c0c0d0; cursor:pointer;
     touch-action:none;
     backdrop-filter:blur(4px);
   }
-  .shoulder-btn.pressed { background:rgba(255,83,73,0.45); border-color:#ff5349; }
+  .shoulder-btn.pressed { background:rgba(255,83,73,0.5); border-color:#ff5349; }
 
-  /* 右侧区域：A/B 大圆形按钮 */
+  /* 右侧：A/B 大圆形按钮 */
   .right-zone {
-    display:flex; flex-direction:column; align-items:center; gap:6px;
-    flex:1;
+    display:flex; flex-direction:column; align-items:center; gap:8px;
   }
   .ab-group {
-    position:relative; width:130px; height:130px;
+    position:relative; width:140px; height:140px;
   }
   .ab-btn {
     position:absolute; border-radius:50%;
-    background:rgba(255,255,255,0.1); border:2px solid rgba(255,255,255,0.25);
+    background:rgba(255,255,255,0.12); border:2px solid rgba(255,255,255,0.28);
     display:flex; align-items:center; justify-content:center;
-    font-size:1.5rem; font-weight:700; color:#e0e0f0; cursor:pointer;
+    font-size:1.6rem; font-weight:700; color:#e0e0f0; cursor:pointer;
     touch-action:none;
-    width:64px; height:64px;
+    width:72px; height:72px;
     backdrop-filter:blur(4px);
-    box-shadow:0 2px 8px rgba(0,0,0,0.3);
+    box-shadow:0 3px 10px rgba(0,0,0,0.4);
   }
-  .ab-btn.pressed { background:rgba(255,83,73,0.45); border-color:#ff5349; transform:scale(0.92); }
+  .ab-btn.pressed { background:rgba(255,83,73,0.5); border-color:#ff5349; transform:scale(0.92); }
   .ab-btn.a { top:0; right:0; }
   .ab-btn.b { bottom:0; left:0; }
 
@@ -277,17 +275,16 @@
 <!-- 落地页 -->
 <div id="landing">
   <h1>GBA 手机模拟器</h1>
-  <p class="sub">参考 My Boy! / Pizza Boy 触控布局</p>
+  <p class="sub">竖屏触控 · 多存档 · 金手指 · 倍速</p>
   <div id="dropzone">
-    <p>点击选择 .gba 文件</p>
+    <p>点击选择手机上的 .gba 文件</p>
     <button class="btn btn-primary" id="select-rom">选择 ROM</button>
     <input type="file" id="rom-input" accept=".gba,.rom" hidden>
   </div>
   <button class="btn btn-primary" id="load-default">加载默认游戏</button>
   <p class="hint">
-    手机无法直接读取本地文件。请在电脑运行：<br>
-    <code>python -m http.server 8080</code><br>
-    手机访问 <code>http://电脑IP:8080/gba.html</code>
+    提示：默认游戏已内置，点击"加载默认游戏"即可开始<br>
+    也可以点击"选择 ROM"加载手机上的其他 .gba 文件
   </p>
 </div>
 
@@ -614,7 +611,10 @@ const dz = document.getElementById('dropzone');
 dz.addEventListener('dragover', e=>{e.preventDefault();dz.classList.add('dragover');});
 dz.addEventListener('dragleave', ()=>dz.classList.remove('dragover'));
 dz.addEventListener('drop', e=>{e.preventDefault();dz.classList.remove('dragover');const f=e.dataTransfer.files[0];if(f&&/\.(gba|rom)$/i.test(f.name))enterGame(URL.createObjectURL(f));else showToast('请拖入.gba文件');});
-document.getElementById('load-default').onclick = () => enterGame(encodeURIComponent(ROM_FILENAME));
+document.getElementById('load-default').onclick = () => {
+  const romPath = '宝可梦火红_口袋群星SP汉化AYA更新2026_v0.32.gba';
+  enterGame(encodeURIComponent(romPath));
+};
 document.getElementById('speed-select').onchange = e => setSpeed(parseInt(e.target.value,10));
 document.getElementById('btn-fullscreen').onclick = () => {
   const el = document.documentElement;
